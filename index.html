@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>বোটানি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "যে ভাজক টিস্যু বিভাজিত হয়ে উদ্ভিদের ত্বক সৃষ্টি করে তাকে কী বলে?",
+          options: {
+            a: "প্রোটোডার্ম",
+            b: "প্রোক্যাম্বিয়াম",
+            c: "মাস মেরিস্টেম",
+            d: "গ্রাউন্ড মেরিস্টেম",
+          },
+          correct: "a",
+          explanation:
+            "<p>যে ভাজক টিস্যু বিভাজিত হয়ে উদ্ভিদের ত্বক বা এপিডার্মিস সৃষ্টি করে, তাকে <strong>প্রোটোডার্ম</strong> বলে। এটি প্রাথমিক ভাজক টিস্যুর সবচেয়ে বাইরের স্তর। প্রোক্যাম্বিয়াম হলো সেই ভাজক টিস্যু যা জাইলেম ও ফ্লোয়েম গঠন করে, মাস মেরিস্টেম সুনির্দিষ্ট কোনো গঠন তৈরি করে না এবং গ্রাউন্ড মেরিস্টেম কর্টেক্স ও মজ্জা তৈরি করে।</p>",
+        },
+        {
+          id: 2,
+          question: "মূলের ত্বককে কী বলে?",
+          options: {
+            a: "এপিডার্মিস",
+            b: "এপিরেমা",
+            c: "হাইপোডার্মিস",
+            d: "কর্টেক্স",
+          },
+          correct: "b",
+          explanation:
+            "<p>মূলের ত্বককে <strong>এপিব্লেমা বা এপিরেমা</strong> বলে। এটি মূলের সবচেয়ে বাইরের স্তর এবং এটি একস্তরবিশিষ্ট প্যারেনকাইমা কোষ দ্বারা গঠিত। এর প্রধান কাজ হলো মাটি থেকে পানি ও খনিজ লবণ শোষণ করা। এপিডার্মিস সাধারণত কাণ্ড ও পাতার বাইরের স্তরকে বোঝায়। হাইপোডার্মিস ত্বকের নিচের স্তর এবং কর্টেক্স ত্বকের ভেতরের বিস্তৃত অঞ্চল।</p>",
+        },
+        {
+          id: 3,
+          question: "কোন গোত্রের উদ্ভিদের পাতার ত্বকে মাইরোসিন কোষ থাকে?",
+          options: {
+            a: "পোয়েসি",
+            b: "ক্রুসিফেরি",
+            c: "মালভেসি",
+            d: "সোলানেসি",
+          },
+          correct: "b",
+          explanation:
+            "<p><strong>ক্রুসিফেরি (Brassicaceae)</strong> গোত্রের উদ্ভিদের পাতার ত্বকে <strong>মাইরোসিন কোষ</strong> থাকে। এই কোষগুলোতে মাইরোসিন নামক এক ধরনের এনজাইম থাকে। এই এনজাইম গ্লুকোসিনোলেট নামক রাসায়নিক পদার্থের সাথে বিক্রিয়া করে ঝাঁঝালো গন্ধযুক্ত যৌগ তৈরি করে, যা উদ্ভিদকে তৃণভোজী প্রাণীদের হাত থেকে রক্ষা করতে সাহায্য করে।</p>",
+        },
+        {
+          id: 4,
+          question: "কোন গোত্রের উদ্ভিদের পাতার ত্বকে বুলিম কোষ থাকে?",
+          options: {
+            a: "পোয়েসি",
+            b: "ক্রুসিফেরি",
+            c: "মালভেসি",
+            d: "সোলানেসি",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>পোয়েসি (Poaceae)</strong> গোত্রের উদ্ভিদের পাতার ত্বকে <strong>বুলিম কোষ (bulliform cells)</strong> থাকে। এই কোষগুলো আকারে বড়, ফাঁপা এবং পাতার উপরের ত্বকে সারি সারিভাবে বিন্যস্ত থাকে। এরা পানি শোষণ করে স্ফীত হয় এবং পানি স্বল্পতায় সঙ্কুচিত হয়ে পাতা ভাঁজ করা ও খোলার সাথে জড়িত, যা প্রস্বেদনের হার নিয়ন্ত্রণে সাহায্য করে।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "নিচের কোন সব উদ্ভিদে ডায়াসাইটিক ধরনের পত্ররন্ধ্র পাওয়া যায়?",
+          options: {
+            a: "তামাক ও বেগুন",
+            b: "চিরতা ও কলসী",
+            c: "নয়নতারা ও কুমড়া",
+            d: "ধান ও গম",
+          },
+          correct: "b",
+          explanation:
+            "<p><strong>ডায়াসাইটিক (Diacytic)</strong> পত্ররন্ধ্রে রক্ষীকোষ দুটির লম্বালম্বি অক্ষের সাথে সমান্তরালভাবে <strong>দুটি সহকারী কোষ</strong> বিন্যস্ত থাকে। চিরতা (Swertia) এবং কলসী (Nepenthes) উদ্ভিদে এই ধরনের পত্ররন্ধ্র দেখা যায়। তামাক ও বেগুনে অ্যানোমোসাইটিক, নয়নতারা ও কুমড়াতে প্যারাসাইটিক এবং ধান ও গমে গ্রামিনিয়াস পত্ররন্ধ্র দেখা যায়।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "নিচের কোন সব উদ্ভিদে গ্রামিনিয়াস ধরনের পত্ররন্ধ্র পাওয়া যায়?",
+          options: {
+            a: "তামাক ও বেগুন",
+            b: "চিরতা ও কলসী",
+            c: "নয়নতারা ও কুমড়া",
+            d: "ধান ও গম",
+          },
+          correct: "d",
+          explanation:
+            "<p><strong>গ্রামিনিয়াস (Graminaceous)</strong> পত্ররন্ধ্র ডাম্বেল আকৃতির রক্ষীকোষ দ্বারা গঠিত এবং এর চারপাশে <strong>দুটি সহকারী কোষ</strong> থাকে যা রক্ষীকোষের সমান্তরালভাবে বিন্যস্ত থাকে। ধান ও গম সহ পোয়েসি (Poaceae) গোত্রের সকল ঘাস জাতীয় উদ্ভিদে এই ধরনের পত্ররন্ধ্র দেখা যায়, যা তাদের বায়ু পরাগায়নের জন্য একটি গুরুত্বপূর্ণ বৈশিষ্ট্য।</p>",
+        },
+        {
+          id: 7,
+          question: "সরিষা উদ্ভিদে কোন ধরনের পত্ররন্ধ্র পাওয়া যায়?",
+          options: {
+            a: "গ্রামিনিয়াস",
+            b: "ডায়াসাইটিক",
+            c: "অ্যানাইসোসাইটিক",
+            d: "প্যারাসাইটিক",
+          },
+          correct: "c",
+          explanation:
+            "<p>সরিষা (Brassica) উদ্ভিদে <strong>অ্যানাইসোসাইটিক (Anisocytic)</strong> ধরনের পত্ররন্ধ্র পাওয়া যায়। এই ধরনের পত্ররন্ধ্রে <strong>তিনটি সহকারী কোষ অসমভাবে</strong> রক্ষীকোষকে ঘিরে থাকে, যার মধ্যে একটি কোষ অন্য দুটি কোষের চেয়ে আকারে ছোট হয়। এটি ক্রুসিফেরি গোত্রের একটি বৈশিষ্ট্য।</p>",
+        },
+        {
+          id: 8,
+          question: "পানি পত্ররন্ধ বা হাইডাথোড গঠনকারী কোষসমূহকে কী বলে?",
+          options: {
+            a: "মাইরোসিন",
+            b: "এপিথেম",
+            c: "রক্ষীকোষ",
+            d: "বুলিম",
+          },
+          correct: "b",
+          explanation:
+            "<p>পানি পত্ররন্ধ্র বা হাইডাথোড (Hydathode) গঠনকারী প্যারেনকাইমা টিস্যুকে <strong>এপিথেম (Epithem)</strong> বলে। এই কোষগুলো পাতলা প্রাচীরযুক্ত এবং এদের মধ্যে আন্তঃকোষীয় ফাঁক থাকে যা গুটেশন প্রক্রিয়ায় (পানি বিন্দু আকারে নিঃসরণ) অতিরিক্ত পানি নিঃসরণে সাহায্য করে। মাইরোসিন কোষ ক্রুসিফেরি গোত্রে পাওয়া যায়, রক্ষীকোষ পত্ররন্ধ্র গঠন করে এবং বুলিম কোষ পোয়েসি গোত্রে থাকে।</p>",
+        },
+        {
+          id: 9,
+          question: "এপিডার্মিসের অন্তর্ভুক্ত হলো-",
+          options: {
+            a: "স্টোমাটা",
+            b: "ট্রাইকোম",
+            c: "রক্ষীকোষ",
+            d: "হাইডাথোড",
+          },
+          correct: "a",
+          explanation:
+            "<p>এপিডার্মিসের অন্তর্ভুক্ত হলো <strong>স্টোমাটা (Stomata)</strong> বা পত্ররন্ধ্র। স্টোমাটা হলো দুটি রক্ষীকোষ (guard cells) দ্বারা বেষ্টিত ছিদ্রপথ যা পাতার ত্বকে অবস্থিত এবং গ্যাসীয় আদান-প্রদান ও প্রস্বেদনে সাহায্য করে। ট্রাইকোম হলো ত্বকের উপবৃদ্ধি, রক্ষীকোষ পত্ররন্ধ্র গঠনকারী কোষ এবং হাইডাথোড পানি নিঃসরণকারী অঙ্গ, যা এপিডার্মিস থেকে উদ্ভূত হয়।</p>",
+        },
+        {
+          id: 10,
+          question: "প্রোটোডার্ম নিচের কোন অঙ্গটি তৈরি করে?",
+          options: {
+            a: "ত্বক",
+            b: "শাখা",
+            c: "পাতা",
+            d: "মূল",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>প্রোটোডার্ম</strong> হলো প্রাথমিক ভাজক টিস্যুর বহিঃস্থ স্তর। এটি বিভাজিত হয়ে উদ্ভিদের <strong>ত্বক (Epidermis)</strong> বা বাইরের আবরণ তৈরি করে। শাখা, পাতা এবং মূল উদ্ভিদের অন্যান্য অংশ, যা প্রোক্যাম্বিয়াম ও গ্রাউন্ড মেরিস্টেমের মতো অন্যান্য ভাজক টিস্যু থেকে বিকশিত হয়।</p>",
+        },
+        {
+          id: 11,
+          question: "জলজ ভাসমান উদ্ভিদের পত্ররন্ধ্র কোথায় থাকে?",
+          options: {
+            a: "নিম্নত্বকে",
+            b: "উভয় ত্বকে",
+            c: "ঊর্ধ্বত্বকে",
+            d: "মধ্যত্বকে",
+          },
+          correct: "c",
+          explanation:
+            "<p>জলজ ভাসমান উদ্ভিদের পাতায় পত্ররন্ধ্র <strong>ঊর্ধ্বত্বকে</strong> থাকে। এর কারণ হলো এদের নিচের পৃষ্ঠ পানির সংস্পর্শে থাকে, ফলে নিচের ত্বকে পত্ররন্ধ্র থাকলে গ্যাসীয় আদান-প্রদান এবং প্রস্বেদন ব্যাহত হবে। তাই বায়ু থেকে গ্যাসীয় আদান-প্রদান এবং প্রস্বেদনের জন্য ঊর্ধ্বত্বকে পত্ররন্ধ্র উন্মুক্ত থাকে।</p>",
+        },
+        {
+          id: 12,
+          question: "হাইডাথোডের প্যারেনকাইমা টিস্যু কী নামে পরিচিত?",
+          options: {
+            a: "এপিরেমা",
+            b: "এপিথেম",
+            c: "ট্রাইকোম",
+            d: "কোলেটার্স",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইডাথোডের প্যারেনকাইমা টিস্যু <strong>এপিথেম (Epithem)</strong> নামে পরিচিত। এই কোষগুলো পাতলা প্রাচীরযুক্ত এবং এদের মধ্যে আন্তঃকোষীয় ফাঁক থাকে যা গুটেশন প্রক্রিয়ায় পানি নিঃসরণে সাহায্য করে। এপিরেমা হলো মূলের ত্বক, ট্রাইকোম হলো ত্বকের উপবৃদ্ধি এবং কোলেটার্স বিশেষ ধরনের গ্রন্থিময় ট্রাইকোম।</p>",
+        },
+        {
+          id: 13,
+          question: "নিচের কোনটি এপিডার্মাল উপাঙ্গের কাজ?",
+          options: {
+            a: "খাদ্য পরিবহন",
+            b: "উদ্ভিদের দৈহিক বৃদ্ধি নিয়ন্ত্রণ",
+            c: "খনিজ লবণ শোষণ",
+            d: "খাদ্য তৈরি",
+          },
+          correct: "c",
+          explanation:
+            "<p>মূলের এপিডার্মিসের এককোশী উপবৃদ্ধি হলো মূলরোম, যা একটি এপিডার্মাল উপাঙ্গ। এই মূলরোমগুলো মাটির কণার সাথে লেগে থেকে উদ্ভিদের জন্য <strong>খনিজ লবণ ও পানি শোষণ</strong> করে। খাদ্য পরিবহন জাইলেম ও ফ্লোয়েমের কাজ, উদ্ভিদের দৈহিক বৃদ্ধি ভাজক টিস্যুর কাজ এবং খাদ্য তৈরি পাতার মেসোফিল টিস্যুর কাজ।</p>",
+        },
+        {
+          id: 14,
+          question: "মূলের এপিরেমা কোন কোষ নিয়ে গঠিত?",
+          options: {
+            a: "প্যারেনকাইমা",
+            b: "কোলেনকাইমা",
+            c: "স্ক্লেরেনকাইমা",
+            d: "অ্যারেনকাইমা",
+          },
+          correct: "a",
+          explanation:
+            "<p>মূলের এপিরেমা বা এপিব্লেমা <strong>প্যারেনকাইমা</strong> কোষ দ্বারা গঠিত। এটি মূলের একস্তরবিশিষ্ট বাইরের আবরণ। এই প্যারেনকাইমা কোষগুলো পাতলা প্রাচীরযুক্ত এবং মূলরোম সৃষ্টি করে যা পানি ও খনিজ লবণ শোষণে সাহায্য করে। কোলেনকাইমা যান্ত্রিক শক্তি প্রদান করে, স্ক্লেরেনকাইমা দৃঢ়তা প্রদান করে এবং অ্যারেনকাইমা জলজ উদ্ভিদে বায়ু ধারণ করে।</p>",
+        },
+        {
+          id: 15,
+          question: "বিশেষ ধরনের বহুকোষী ট্রাইকোমকে কী বলে?",
+          options: {
+            a: "কোলেটার্স",
+            b: "শঙ্ক",
+            c: "রাডার",
+            d: "স্টোম্যাটা",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>কোলেটার্স (Colleters)</strong> হলো বিশেষ ধরনের বহুকোষী ট্রাইকোম যা গ্রন্থিময় এবং আঠালো পদার্থ নিঃসরণ করে। এগুলো সাধারণত কচি পাতা বা কুঁড়ি রক্ষায় ভূমিকা রাখে, যেমন কুঁড়িকে শুকিয়ে যাওয়া থেকে রক্ষা করা বা পোকামাকড় থেকে সুরক্ষা প্রদান করা। শঙ্ক, রাডার বা স্টোম্যাটা ট্রাইকোমের প্রকারভেদ নয়।</p>",
+        },
+        {
+          id: 16,
+          question: "কোনটিতে হাইডাথোড থাকতে পারে?",
+          options: {
+            a: "পাতা",
+            b: "ফুল",
+            c: "মূল",
+            d: "কাণ্ড",
+          },
+          correct: "a",
+          explanation:
+            "<p>হাইডাথোড (Hydathode) প্রধানত <strong>পাতার</strong> কিনারায় বা শিরা প্রান্তে অবস্থিত থাকে। এটি বিশেষ ধরনের ছিদ্রপথ যা অতিরিক্ত পানি বিন্দু আকারে নিঃসরণে সাহায্য করে, যাকে গুটেশন (guttation) বলে। ফুল, মূল বা কাণ্ডে সাধারণত হাইডাথোড থাকে না।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "নিচের কোনটিতে বায়বীয় অংশের ত্বকে অবস্থিত দুইটি বিশেষ কোষ দিয়ে বেষ্টিত ও নিয়ন্ত্রিত ছিদ্রপথটি রাতের বেলায় খোলা থাকে?",
+          options: {
+            a: "কার্পাস তুলা",
+            b: "ধান",
+            c: "পাথরকুচি",
+            d: "সরিষা",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>পাথরকুচি (Bryophyllum)</strong> হলো একটি CAM (Crassulacean Acid Metabolism) উদ্ভিদ। CAM উদ্ভিদের পত্ররন্ধ্র দিনের বেলায় বন্ধ থাকে যাতে প্রস্বেদন কমে এবং পানি ক্ষয় রোধ হয়। রাতের বেলায় যখন তাপমাত্রা কম থাকে এবং আর্দ্রতা বেশি থাকে, তখন এদের পত্ররন্ধ্র খোলে গ্যাসীয় আদান-প্রদান এবং CO<sub>2</sub> গ্রহণের জন্য।</p>",
+        },
+        {
+          id: 18,
+          question: "উদ্ভিদের এপিডার্মিস ও এপিরেমা গঠন করে কোনটি?",
+          options: {
+            a: "প্রোটোডার্ম",
+            b: "প্রোক্যাম্বিয়াম",
+            c: "গ্রাউন্ড মেরিস্টেম",
+            d: "রিব ভাজক টিস্যু",
+          },
+          correct: "a",
+          explanation:
+            "<p><strong>প্রোটোডার্ম</strong> হলো প্রাথমিক ভাজক টিস্যুর বহিঃস্থ স্তর। এটি বিভাজিত হয়ে কাণ্ডের <strong>এপিডার্মিস</strong> এবং মূলের <strong>এপিব্লেমা বা এপিরেমা</strong> গঠন করে। প্রোক্যাম্বিয়াম পরিবহন টিস্যু (জাইলেম ও ফ্লোয়েম), গ্রাউন্ড মেরিস্টেম কর্টেক্স ও মজ্জা এবং রিব ভাজক টিস্যু নির্দিষ্ট কিছু কাঠামোগত অংশ তৈরি করে।</p>",
+        },
+        {
+          id: 19,
+          question: "নিচের কোন উদ্ভিদের পাতায় হাইডাথোড বিদ্যমান?",
+          options: {
+            a: "আলু",
+            b: "কচু",
+            c: "শসা",
+            d: "বেগুন",
+          },
+          correct: "b",
+          explanation:
+            "<p><strong>কচু (Colocasia)</strong> সহ বিভিন্ন জলজ ও আর্দ্রভূমিতে জন্মানো উদ্ভিদের পাতায় <strong>হাইডাথোড</strong> বিদ্যমান থাকে। এই হাইডাথোডগুলো গুটেশন (guttation) প্রক্রিয়ায় অতিরিক্ত পানি বিন্দু আকারে নিঃসরণে সাহায্য করে, বিশেষ করে যখন মাটি থেকে অতিরিক্ত পানি শোষণ হয় এবং প্রস্বেদন হার কম থাকে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                        <label class="option" data-option="${option}">
+                          <div class="circle">${option}</div>
+                          <span class="option-text">${question.options[option]}</span>
+                        </label>
+                      `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                           <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                           <div class="explanation-content">
+                             <div class="explanation-label">ব্যাখ্যা:</div>
+                             ${question.explanation}
+                           </div>
+                         </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                      <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                      <div class="options">
+                        ${optionsHTML}
+                      </div>
+                      ${explanationHTML}
+                    `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
